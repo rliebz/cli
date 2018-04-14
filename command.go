@@ -232,11 +232,11 @@ func reorderArgs(args []string) []string {
 	return append(flags, nonflags...)
 }
 
+// translateShortOptions separates combined flags
 func translateShortOptions(flagArgs Args) []string {
-	// separate combined flags
 	var flagArgsSeparated []string
 	for _, flagArg := range flagArgs {
-		if strings.HasPrefix(flagArg, "-") && strings.HasPrefix(flagArg, "--") == false && len(flagArg) > 2 {
+		if strings.HasPrefix(flagArg, "-") && !strings.HasPrefix(flagArg, "--") && len(flagArg) > 2 {
 			for _, flagChar := range flagArg[1:] {
 				flagArgsSeparated = append(flagArgsSeparated, "-"+string(flagChar))
 			}

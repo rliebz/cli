@@ -315,5 +315,6 @@ func TestCommandSkipFlagParsing(t *testing.T) {
 		err := app.Run(c.testArgs)
 		expect(t, err, c.expectedErr)
 		expect(t, args, c.expectedArgs)
+		expect(t, value, "")
 	}
 }

@@ -94,6 +94,10 @@ type App struct {
 	// cli.go uses text/template to render templates. You can
 	// render custom help text by setting this variable.
 	CustomAppHelpTemplate string
+	// Boolean to enable short-option handling so user can combine several
+	// single-character bool arguements into one
+	// i.e. foobar -o -v -> foobar -ov
+	UseShortOptionHandling bool
 
 	didSetup bool
 }
@@ -138,21 +142,7 @@ func (a *App) Setup() {
 		a.Authors = append(a.Authors, Author{Name: a.Author, Email: a.Email})
 	}
 
-	newCmds := []Command{}
-	for _, c := range a.Commands {
-		if c.HelpName == "" {
-			c.HelpName = fmt.Sprintf("%s %s", a.HelpName, c.Name)
-		}
-		newCmds = append(newCmds, c)
-	}
-	a.Commands = newCmds
-
-	if a.Command(helpCommand.Name) == nil && !a.HideHelp {
-		a.Commands = append(a.Commands, helpCommand)
-		if (HelpFlag != BoolFlag{}) {
-			a.appendFlag(HelpFlag)
-		}
-	}
+	a.updateCommands()
 
 	if !a.HideVersion {
 		a.appendFlag(VersionFlag)
@@ -192,8 +182,13 @@ func (a *App) Run(arguments []string) (err error) {
 		return err
 	}
 
+	arguments = arguments[1:]
+	if a.UseShortOptionHandling {
+		arguments = translateShortOptions(arguments)
+	}
+
 	set.SetOutput(ioutil.Discard)
-	err = set.Parse(arguments[1:])
+	err = set.Parse(arguments)
 	nerr := normalizeFlags(a.Flags, set)
 	context := NewContext(a, set, nil)
 	if nerr != nil {
@@ -286,24 +281,9 @@ func (a *App) RunAndExitOnError() {
 // RunAsSubcommand invokes the subcommand given the context, parses ctx.Args() to
 // generate command-specific flags
 func (a *App) RunAsSubcommand(ctx *Context) (err error) {
-	// append help to commands
 	if len(a.Commands) > 0 {
-		if a.Command(helpCommand.Name) == nil && !a.HideHelp {
-			a.Commands = append(a.Commands, helpCommand)
-			if (HelpFlag != BoolFlag{}) {
-				a.appendFlag(HelpFlag)
-			}
-		}
+		a.updateCommands()
 	}
-
-	newCmds := []Command{}
-	for _, c := range a.Commands {
-		if c.HelpName == "" {
-			c.HelpName = fmt.Sprintf("%s %s", a.HelpName, c.Name)
-		}
-		newCmds = append(newCmds, c)
-	}
-	a.Commands = newCmds
 
 	// parse flags
 	set, err := flagSet(a.Name, a.Flags)
@@ -311,8 +291,13 @@ func (a *App) RunAsSubcommand(ctx *Context) (err error) {
 		return err
 	}
 
+	arguments := ctx.Args().Tail()
+	if a.UseShortOptionHandling {
+		arguments = translateShortOptions(arguments)
+	}
+
 	set.SetOutput(ioutil.Discard)
-	err = set.Parse(ctx.Args().Tail())
+	err = set.Parse(arguments)
 	nerr := normalizeFlags(a.Flags, set)
 	context := NewContext(a, set, ctx)
 
@@ -440,6 +425,27 @@ func (a *App) VisibleCommands() []Command {
 // VisibleFlags returns a slice of the Flags with Hidden=false
 func (a *App) VisibleFlags() []Flag {
 	return visibleFlags(a.Flags)
+}
+
+func (a *App) updateCommands() {
+	if a.Command(helpCommand.Name) == nil && !a.HideHelp {
+		a.Commands = append(a.Commands, helpCommand)
+		if (HelpFlag != BoolFlag{}) {
+			a.appendFlag(HelpFlag)
+		}
+	}
+
+	newCmds := []Command{}
+	for _, c := range a.Commands {
+		if c.HelpName == "" {
+			c.HelpName = fmt.Sprintf("%s %s", a.HelpName, c.Name)
+		}
+		if a.UseShortOptionHandling {
+			c.UseShortOptionHandling = true
+		}
+		newCmds = append(newCmds, c)
+	}
+	a.Commands = newCmds
 }
 
 func (a *App) hasFlag(flag Flag) bool {

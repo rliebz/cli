@@ -187,7 +187,7 @@ func ShowCommandHelp(ctx *Context, command string) error {
 	for _, c := range ctx.App.Commands {
 		if c.HasName(command) {
 			if c.CustomHelpTemplate != "" {
-				HelpPrinterCustom(ctx.App.Writer, c.CustomHelpTemplate, c, nil)
+				HelpPrinter(ctx.App.Writer, c.CustomHelpTemplate, c)
 			} else {
 				HelpPrinter(ctx.App.Writer, CommandHelpTemplate, c)
 			}

@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
-	"log"
 	"os"
 	"reflect"
 	"strings"
@@ -1423,7 +1422,7 @@ func TestApp_Run_CommandWithSubcommandHasHelpTopic(t *testing.T) {
 	}
 
 	for _, flagSet := range subcommandHelpTopics {
-		log.Printf("==> checking with flags %v", flagSet)
+		t.Logf("==> checking with flags %v", flagSet)
 
 		app := &App{}
 		buf := new(bytes.Buffer)
@@ -1452,6 +1451,7 @@ func TestApp_Run_CommandWithSubcommandHasHelpTopic(t *testing.T) {
 		}
 
 		output := buf.String()
+		//t.Logf("output: %q\n", buf.Bytes())
 
 		if strings.Contains(output, "No help topic for") {
 			t.Errorf("expect a help topic, got none: \n%q", output)
@@ -1613,7 +1613,7 @@ func TestApp_Run_Help(t *testing.T) {
 	for _, args := range helpArguments {
 		buf := new(bytes.Buffer)
 
-		log.Printf("==> checking with arguments %v", args)
+		t.Logf("==> checking with arguments %v", args)
 
 		app := &App{
 			Name:   "boom",
@@ -1631,7 +1631,7 @@ func TestApp_Run_Help(t *testing.T) {
 		}
 
 		output := buf.String()
-		log.Printf("output: %q\n", buf.Bytes())
+		t.Logf("output: %q\n", buf.Bytes())
 
 		if !strings.Contains(output, "boom - make an explosive entrance") {
 			t.Errorf("want help to contain %q, did not: \n%q", "boom - make an explosive entrance", output)
@@ -1645,7 +1645,7 @@ func TestApp_Run_Version(t *testing.T) {
 	for _, args := range versionArguments {
 		buf := new(bytes.Buffer)
 
-		log.Printf("==> checking with arguments %v", args)
+		t.Logf("==> checking with arguments %v", args)
 
 		app := &App{
 			Name:    "boom",
@@ -1664,7 +1664,7 @@ func TestApp_Run_Version(t *testing.T) {
 		}
 
 		output := buf.String()
-		log.Printf("output: %q\n", buf.Bytes())
+		t.Logf("output: %q\n", buf.Bytes())
 
 		if !strings.Contains(output, "0.1.0") {
 			t.Errorf("want version to contain %q, did not: \n%q", "0.1.0", output)
@@ -1718,6 +1718,7 @@ func TestApp_Run_Categories(t *testing.T) {
 	}
 
 	output := buf.String()
+	//t.Logf("output: %q\n", buf.Bytes())
 
 	if !strings.Contains(output, "1:\n     command1") {
 		t.Errorf("want buffer to include category %q, did not: \n%q", "1:\n     command1", output)
@@ -2121,7 +2122,7 @@ func TestWhenExitSubCommandWithCodeThenAppQuitUnexpectedly(t *testing.T) {
 	var exitCodeFromExitErrHandler int
 	app.ExitErrHandler = func(c *Context, err error) {
 		if exitErr, ok := err.(ExitCoder); ok {
-			log.Print(exitErr)
+			t.Log(exitErr)
 			exitCodeFromExitErrHandler = exitErr.ExitCode()
 		}
 	}
